@@ -1,7 +1,6 @@
 -- Pandora | https://www.nexusmods.com/monsterhunterwilds/mods/3381
 -- Table-copy helper: https://gist.github.com/tylerneylon/81333721109155b2d244
 
-
 log.info("Pandora loaded")
 local config_file = "Pandora.json"
 local preset_dir = "PandoraPresets\\\\"
@@ -18,13 +17,10 @@ local function merge_tables(t1, t2)
     return t1
 end
 
-
 local function copy3(obj, seen)
-    
     if type(obj) ~= 'table' then return obj end
     if seen and seen[obj] then return seen[obj] end
-  
-    
+
     local s = seen or {}
     local res = {}
     s[obj] = res
@@ -108,20 +104,17 @@ local function get_stem(path)
 end
 
 function spairs(t, comp)
-    
     local keys = {}
     for k in pairs(t) do
         table.insert(keys, k)
     end
 
-    
     if comp then
         table.sort(keys, function(a, b) return comp(t, a, b) end)
     else
         table.sort(keys)
     end
 
-    
     local i = 0
     return function()
         i = i + 1
@@ -174,10 +167,6 @@ re.on_config_save(
     end
 )
 
-
-
-
-
 local function push_queue(queue, data, max_queue_size)
     table.insert(queue, data)
     if #queue > max_queue_size then
@@ -185,9 +174,7 @@ local function push_queue(queue, data, max_queue_size)
     end
 end
 
-
 local function normalize_degrees(angle)
-    
     angle = angle % 360
     if angle > 180 then
         angle = angle - 360
@@ -207,41 +194,11 @@ local function ypr_degrees2direction(yaw_deg, pitch_deg, roll_deg)
 end
 
 local function quat_multiply(q2, q1)
-    
     return sdk.find_type_definition("via.quaternion"):get_method("mul(via.Quaternion, via.Quaternion)"):call(nil, q2, q1)
-    
-    
-
-    
-    
-    
-    
-    
-    
 end
 
 local function ypr_degrees2quat(yaw, pitch, roll)
-    
     return sdk.find_type_definition("via.quaternion"):get_method("makeRotationRollPitchYaw(System.Single, System.Single, System.Single)"):call(nil, -math.rad(pitch), -math.rad(yaw), math.rad(roll))
-
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-
-    
-    
 end
 
 local function ax2quat(x, y, z)
@@ -252,7 +209,6 @@ local function rotate_quaternion_by_ypr_degrees(q, yaw, pitch, roll)
     local rot = ypr_degrees2quat(yaw, pitch, roll)
     return quat_multiply(rot, q)
 end
-
 
 local function constructor(type_name) 
 	local output = (sdk.create_instance(type_name) or sdk.create_instance(type_name, true)):add_ref()
@@ -399,12 +355,10 @@ local function get_camera_lookat_position()
     local raycast_manager = sdk.get_managed_singleton("app.AppRaycastManager")
     if not raycast_manager then return nil end
 
-    
     local raycast_result = raycast_manager:call("castRayImmediate(app.RAY_CAST_TYPE, via.vec3, via.vec3, System.Action`1<via.physics.CastRayResult>)", 15, eye_pos + forward * min_distance, eye_pos + forward * 1000, nil)
     if not raycast_result then return nil end
     local num_contact = raycast_result:get_NumContactPoints()
 
-    
     if num_contact == 0 then
         raycast_result = raycast_manager:call("castRayImmediate(app.RAY_CAST_TYPE, via.vec3, via.vec3, System.Action`1<via.physics.CastRayResult>)", 0, eye_pos + forward * min_distance, eye_pos + forward * 1000, nil)
         if not raycast_result then return nil end
@@ -419,9 +373,6 @@ local function get_camera_lookat_position()
     local contact_pos = contact_point.Position
     return contact_pos
 end
-
-
-
 
 local MAX_WP_TYPE = 13
 local weapon_caching = {}
@@ -460,9 +411,7 @@ local function cache_func(wp_type)
         if weapon_caching[wp_type].shell_list then return end
         local original = get_shell_list(wp_type)
         if not original then return end
-        
-        
-        
+
         original:add_ref()
         weapon_caching[wp_type].shell_list = original
         log.info("Pandora original shell list retained: weapon " .. tostring(wp_type))
@@ -471,10 +420,8 @@ local function cache_func(wp_type)
     local function cache_sound_shell_list_data()
         if weapon_caching[wp_type].sound_shell_list_data then return end
 
-        
         local sound_container = get_sound_container()
 
-        
         local cache_thread=thread.get_id()
         local previous_cache=sound_cache_contexts[cache_thread]
         sound_cache_contexts[cache_thread]=wp_type
@@ -504,7 +451,6 @@ local function cache_func(wp_type)
     return weapon_caching[wp_type].sound_shell_list_data ~= nil and weapon_caching[wp_type].shell_list ~= nil
 end
 
-
 if _WEAPON_CACHING then
     for wp_type = 0, MAX_WP_TYPE do
         if not weapon_caching[wp_type].caching_registered then
@@ -524,12 +470,8 @@ else
     end)
 end
 
-
-
-
 local in_mod_shoot_shell = false
 local spawn_fault = nil 
-
 
 local MAX_PULSE_POOL_BATCH = 5
 local MAX_PULSE_QUEUED = 10
@@ -603,7 +545,6 @@ local should_skip_doAfterCreateEffectEventCore = false
 local mod_managed_shell = {}
 local MAX_MANAGED_SHELL = 100
 
-
 re.on_frame(function()
     if not mod_managed_shell then
         mod_managed_shell = {}
@@ -616,18 +557,13 @@ re.on_frame(function()
         if shell:get_ShellOwner() then
             push_queue(new_managed_shell, managed_shell, MAX_MANAGED_SHELL)
         end
-        
-        
-        
     end
     mod_managed_shell = new_managed_shell
 end)
 
-
 local function get_sound_shell_data(sound_id)
     return sound_caching_table[sound_id]
 end
-
 
 sdk.hook(sdk.find_type_definition("soundlib.SoundContainer"):get_method("findShellData(System.UInt32)"),
     function(args)
@@ -650,8 +586,6 @@ sdk.hook(sdk.find_type_definition("soundlib.SoundContainer"):get_method("findShe
     end
 )
 
-
-
 sdk.hook(sdk.find_type_definition("app.mcShellCallEffect"):get_method("callMazzleFx()"),
     function(args)
         local ctx=current_spawn_context()
@@ -665,14 +599,13 @@ sdk.hook(sdk.find_type_definition("app.mcShellCallEffect"):get_method("callMazzl
     end
 )
 
-
 sdk.hook(sdk.find_type_definition("app.cEffectController"):get_method("playEffect(System.UInt32, app.EffectID_Common.ID, via.GameObject, app.cEffectOverwriteParams)"),
     function(args)
         local ctx=current_spawn_context()
         if not ctx or ctx.muzzle_depth<1 then return end
         local effect_override_params = sdk.to_managed_object(args[6])
         if not effect_override_params then return end
-        
+
         effect_override_params:set_IsUpdatePos(true)
         effect_override_params:set_Pos(ctx.position)
         effect_override_params:set_IsUpdateRotation(true)
@@ -680,7 +613,6 @@ sdk.hook(sdk.find_type_definition("app.cEffectController"):get_method("playEffec
     end,
     nil
 )
-
 
 sdk.hook(sdk.find_type_definition("ace.EngineSingletonCallbackManager"):get_method("doAfterCreateEffectEventCore(via.effect.script.EffectManager.AfterCreateEffectInfo)"),
     function(args)
@@ -690,7 +622,6 @@ sdk.hook(sdk.find_type_definition("ace.EngineSingletonCallbackManager"):get_meth
     end,
     nil
 )
-
 
 local frame_types_id2str = {}
 local frame_types_str2id = {}
@@ -705,7 +636,6 @@ local function register_frame_type(name, get_frame_func, ui, init_args)
     frame_types_str2ui[name] = ui
     frame_types_str2init_args[name] = init_args
 end
-
 
 local function get_frame_transform(shoot_args, old_frame_transform)
     local get_frame_func = frame_types_str2func[shoot_args.frame]
@@ -783,7 +713,6 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
     local position = transform.position
     local rotation = transform.rotation
 
-    
     local shellShootingInfo = constructor("app.cShellShootingInfo")
     if not shellShootingInfo then return end
 
@@ -798,7 +727,6 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
     shellShootingInfo:set_field("<StartRot>k__BackingField", start_rot)
 
     if weapon_id >= 0 then
-        
         local wp = get_wp()
         if not wp then return end
         local wp_type = get_wp_type()
@@ -807,8 +735,7 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
         if not shell_create_controller then return end
         local current_shell_list = get_shell_list(wp_type)
         if not current_shell_list then return end
-        
-        
+
         local shell_list_cache = weapon_caching[weapon_id].shell_list
         if not shell_list_cache then return end
         local shell_owner = shell_create_controller:get_ShellOwner()
@@ -816,8 +743,6 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
             error("Pandora spawn: weapon shell controller has no owner")
         end
 
-        
-        
         in_mod_shoot_shell = true
         should_skip_doAfterCreateEffectEventCore = true
         shell_start_pos = position
@@ -854,14 +779,12 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
         should_skip_doAfterCreateEffectEventCore = false
         in_mod_shoot_shell = false
 
-        
         local restore_ok, restore_error = pcall(function()
             if not active_pool_batch then
                 shell_create_controller:setup(shell_owner, current_shell_list)
             end
         end)
         if not restore_ok then
-            
             spawn_fault = 'controller restore failed: ' .. tostring(restore_error)
             log.error("Pandora spawn safety: disabled after controller restore failure: " .. tostring(restore_error))
         end
@@ -871,13 +794,11 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
             error("Pandora spawn " .. tostring(weapon_id) .. "/" .. tostring(shell_id) .. ": " .. tostring(spawn_error))
         end
     elseif weapon_id == -1 then
-        
         local hunter = get_hunter()
         if not hunter then return end
         local shell_create_controller = hunter._ShellCreateController
         if not shell_create_controller then return end
-        
-        
+
         in_mod_shoot_shell = true
         shell_start_pos = position
         shell_start_rot = rotation
@@ -893,7 +814,6 @@ local function shoot_single_shell(shoot_args, old_frame_transform)
         in_mod_shoot_shell = false
     end
 end
-
 
 local registered_shells = {}
 local function register_shell(shoot_args)
@@ -986,7 +906,6 @@ if type(re.on_script_reset)=='function' then
     re.on_script_reset(function() clear_pulses() end)
 end
 
-
 local last_motion = nil
 local last_sub_motion = nil
 local last_update_motion_time = nil
@@ -1011,7 +930,7 @@ end
 
 re.on_application_entry("UpdateMotionFrame", function()
     if not config.enabled then return end
-    
+
     local main_motion = get_motion()
     local sub_motion = get_sub_motion()
     for _, motion in ipairs({main_motion, sub_motion}) do
@@ -1023,7 +942,7 @@ re.on_application_entry("UpdateMotionFrame", function()
         for _, segment_config in ipairs(target_motion_config.segments) do
             if not segment_config.enabled then goto continue1 end
             if not should_register_shell(motion, segment_config.start_frame) then goto continue1 end
-            
+
             for _, shoot_args in ipairs(segment_config.shoot_args_container) do
                 register_shell(shoot_args)
             end
@@ -1032,12 +951,11 @@ re.on_application_entry("UpdateMotionFrame", function()
         end
         ::continue::
     end
-    
+
     last_motion = main_motion
     last_sub_motion = sub_motion
     last_update_motion_time = os.clock()
 end)
-
 
 re.on_frame(function()
     if spawn_fault then registered_shells = {}; return end
@@ -1063,8 +981,7 @@ re.on_frame(function()
 
         if current_time >= shell.time then
             local key = shell.args.mgs_pulse_pool_batch
-            
-            
+
             if type(key) ~= 'string' or shell.args.weapon_id ~= 0 or shell.args.shell_id ~= 1 then key = nil end
             if active_pool_batch and (not key or active_pool_batch.key ~= key or active_pool_batch.count >= MAX_PULSE_POOL_BATCH) then
                 finish_pool_batch()
@@ -1085,9 +1002,6 @@ re.on_frame(function()
     if spawn_fault then remaining = {} end
     registered_shells = remaining
 end)
-
-
-
 
 local mv_manager_property_getter_registered = false
 
@@ -1126,12 +1040,8 @@ else
     end)
 end
 
-
-
-
 local latest_shell_queue = {}
 local MAX_QUEUE_SIZE = 20
-
 
 sdk.hook(sdk.find_type_definition("ace.cShellCreateController"):get_method("shootShell(System.Int32, ace.cShellShootingInfoBase, System.Action`1<ace.ShellBase>)"),
     function(args)
@@ -1139,7 +1049,7 @@ sdk.hook(sdk.find_type_definition("ace.cShellCreateController"):get_method("shoo
 
         local this = sdk.to_managed_object(args[2])
         if not this then return end
-        
+
         local wp = get_wp()
         if not wp then return end
         local wp_shell_create_controller = wp._ShellCreateController
@@ -1166,26 +1076,6 @@ sdk.hook(sdk.find_type_definition("ace.cShellCreateController"):get_method("shoo
     nil
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 local UI_vars = {
     motion_bank_id_to_add = 0,
     motion_id_to_add = 0,
@@ -1211,7 +1101,6 @@ local function tooltip(text)
     imgui.text("(?)")
     if imgui.is_item_hovered() then imgui.set_tooltip("  "..text.."  ") end
 end
-
 
 local segment_config_helper_id2str = {}
 local segment_config_helper_str2id = {}
@@ -1247,7 +1136,6 @@ local function set_segment_config_helper_args(name, segment_config, shoot_args)
         set_args(segment_config.segment_config_helper_args)
     end
 end
-
 
 local function preset_combo(value, label)
     local id2str = {}
@@ -1384,10 +1272,9 @@ local function segments_config_ui(segments)
     end
 end
 
-
 re.on_draw_ui(function()
     local changed, any_changed = false, false
-    
+
     if imgui.tree_node("Pandora") then
         if spawn_fault then
             imgui.text("Spawning halted: " .. spawn_fault)
@@ -1395,7 +1282,6 @@ re.on_draw_ui(function()
         end
         changed, config.enabled = imgui.checkbox("Enabled", config.enabled)
         if imgui.tree_node("Preview Config") then
-            
             if imgui.tree_node("Segments") then
                 segments_config_ui(config.preview_segments)
                 imgui.tree_pop()
@@ -1449,7 +1335,7 @@ re.on_draw_ui(function()
 
             imgui.tree_pop()
         end
-        
+
         if imgui.tree_node("Current Motion") then
             local motion = get_motion()
             local weapon_type = get_wp_type()
@@ -1501,7 +1387,7 @@ re.on_draw_ui(function()
                                 changed, motion_config.enabled = imgui.checkbox("Enabled", motion_config.enabled)
 
                                 segments_config_ui(motion_config.segments)
-                                
+
                                 if imgui.button("Copy to Preview") then
                                     config.preview_segments = copy3(motion_config.segments)
                                 end
@@ -1513,10 +1399,10 @@ re.on_draw_ui(function()
                                 imgui.tree_pop()
                             end
                         end
-        
+
                         imgui.tree_pop()
                     end
-        
+
                     if imgui.button("Clear Preset") then
                         preset_config.motion_configs = {}
                     end
@@ -1541,7 +1427,6 @@ re.on_draw_ui(function()
         end
 
         if imgui.tree_node("Debug") then
-        
             if imgui.tree_node("Caching Stats") then
                 if imgui.tree_node("ShellList") then
                     for wp_type = 0, MAX_WP_TYPE do
@@ -1595,7 +1480,6 @@ re.on_draw_ui(function()
         imgui.tree_pop()
     end
 end)
-
 
 register_frame_type("hunter", 
 function(frame_args) 
@@ -1655,7 +1539,6 @@ local function register_aim_frame_type()
     register_frame_type("aim", get_frame, ui, init_args)
 end
 register_aim_frame_type()
-
 
 local function register_sphere_line_helper()
     local private_args = {
@@ -1726,7 +1609,6 @@ local function register_sphere_line_helper()
         local center_rot = Vector3f.new(private_args.center_offset.yaw, private_args.center_offset.pitch, private_args.center_offset.roll)
         local rot_increment = Vector3f.new(private_args.offset_increment.yaw, private_args.offset_increment.pitch, private_args.offset_increment.roll)
         if private_args.double_sided then
-
             if private_args.num_shells % 2 == 0 then
                 local accumulated_rot_increment = rot_increment / 2.0
                 for i = 1, private_args.num_shells / 2 do
@@ -1758,7 +1640,6 @@ local function register_sphere_line_helper()
                     table.insert(new_shoot_args_container, new_shoot_args2)
                 end
             end
-            
         else
             local accumulated_rot_increment = Vector3f.new(0.0, 0.0, 0.0)
             for i = 1, private_args.num_shells do
@@ -1777,10 +1658,8 @@ local function register_sphere_line_helper()
     end
 
     register_segment_config_helper("Sphere Line", func, ui, set_args, get_args)
-
 end
 register_sphere_line_helper()
-
 
 _PANDORA = {}
 _PANDORA.get_empty_shoot_args = get_empty_shoot_args

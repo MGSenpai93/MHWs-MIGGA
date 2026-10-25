@@ -1,6 +1,5 @@
 -- Weapon Caching
 
-
 local config_file_path = "weapon_caching.json"
 local function merge_tables(t1, t2)
     for k, v in pairs(t2) do
@@ -26,7 +25,6 @@ re.on_config_save(
         json.dump_file(config_file_path, config)
     end
 )
-
 
 local function get_hunter()
     local player_manager = sdk.get_managed_singleton("app.PlayerManager")
@@ -59,9 +57,7 @@ local function get_wp_data(type)
   return sdk.find_type_definition("app.WeaponUtil"):get_method("getWeaponData(System.Int32, app.WeaponDef.TYPE)"):call(nil, 0, type)
 end
 
-
 local MAX_WP_TYPE = 13
-
 
 local task_lists = {}
 local cache_status = {}
@@ -81,9 +77,6 @@ local TASK_STATE = {
     IDLE = 4,
 }
 local task_state = TASK_STATE.IDLE
-
-
-
 
 local function describe_components(func, wp_type)
     if not debug or type(debug.getupvalue) ~= 'function' then return nil end
@@ -118,10 +111,7 @@ local function describe_components(func, wp_type)
     return ok and result or nil
 end
 
-
 local function register_cache_task(target_wp_type, cache_func)
-    
-    
     if target_wp_type < 0 or target_wp_type > MAX_WP_TYPE then
         log.error("Invalid weapon type: " .. tostring(target_wp_type))
         return
@@ -129,7 +119,6 @@ local function register_cache_task(target_wp_type, cache_func)
     table.insert(task_lists[target_wp_type], cache_func)
     cache_status[target_wp_type] = 'Pending'
 end
-
 
 local function next_wp_type()
     for wp_type = 0, MAX_WP_TYPE do
@@ -151,7 +140,6 @@ local function after_caching()
 end
 
 local function init_wp_cache()
-    
     if task_state == TASK_STATE.IDLE then return end
 
     local player_manager = sdk.get_managed_singleton("app.PlayerManager")
@@ -163,9 +151,6 @@ local function init_wp_cache()
 
     if task_state == TASK_STATE.CHANGING then
         if wp_type ~= current_caching_type then
-            
-            
-            
             local wp_data = get_wp_data(current_caching_type)
             if not wp_data then
                 cache_status[current_caching_type] = 'Waiting for weapon data'
@@ -185,7 +170,6 @@ local function init_wp_cache()
             task_state = TASK_STATE.CACHING
             cache_status[current_caching_type] = 'Caching'
         end
-
     elseif task_state == TASK_STATE.CACHING then
         local funcs = task_lists[current_caching_type]
         local remaining = {}
@@ -199,11 +183,9 @@ local function init_wp_cache()
             end
         end
 
-        
         task_lists[current_caching_type] = remaining
 
         if #remaining == 0 then
-            
             cache_status[current_caching_type] = 'Completed'
             log.info('Weapon caching: Completed tasks for weapon type '..tostring(current_caching_type))
             if cache_components[current_caching_type] then
@@ -221,7 +203,6 @@ local function init_wp_cache()
                 after_caching()
             end
         end
-
     elseif task_state == TASK_STATE.RESTORING then
         if wp_type ~= hunter_create_info:get_WpType() then
             player_manager:call(
@@ -236,7 +217,6 @@ local function init_wp_cache()
         end
     end
 end
-
 
 local skip_frame_counter = 0
 re.on_frame(function()
@@ -254,12 +234,9 @@ re.on_frame(function()
     init_wp_cache()
 end)
 
-
 _WEAPON_CACHING = {
     register_cache_task = register_cache_task
 }
-
-
 
 re.on_draw_ui(function()
     local changed, any_changed = false, false
